@@ -16,9 +16,15 @@ const Admin = () => {
     }, [refreshTrigger]);
 
     const fetchReports = async () => {
+        // Fetch reports with user email from auth.users
         const { data, error } = await supabase
             .from('reports')
-            .select('*')
+            .select(`
+                *,
+                user:user_id (
+                    email
+                )
+            `)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -64,7 +70,7 @@ const Admin = () => {
             report.lat,
             report.lng,
             new Date(report.created_at).toLocaleString(),
-            report.user_id || 'N/A',
+            report.user?.email || 'N/A',
             report.user_ip || 'N/A'
         ]);
 
@@ -89,10 +95,10 @@ const Admin = () => {
     };
 
     return (
-        <div className="flex h-screen bg-white">
+        <div className="flex flex-col md:flex-row h-screen bg-white">
             {/* Left Panel - Reports List */}
-            <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
-                <div className="p-6 border-b border-gray-200">
+            <div className="w-full md:w-1/3 border-r border-gray-200 overflow-y-auto">
+                <div className="p-4 md:p-6 border-b border-gray-200">
                     <div className="flex items-center justify-between mb-4">
                         <Link
                             to="/"
@@ -102,7 +108,7 @@ const Admin = () => {
                             <ArrowLeft size={20} />
                         </Link>
                         <div className="flex items-center gap-2">
-                            <div className="text-right text-xs">
+                            <div className="text-right text-xs hidden md:block">
                                 <p className="font-semibold text-black">{user?.user_metadata?.full_name || 'Admin'}</p>
                                 <p className="text-gray-600">{user?.email}</p>
                             </div>
@@ -115,16 +121,16 @@ const Admin = () => {
                             </button>
                         </div>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                         <div>
-                            <h1 className="text-2xl font-bold text-black">Admin Dashboard</h1>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <h1 className="text-xl md:text-2xl font-bold text-black">Admin Dashboard</h1>
+                            <p className="text-xs md:text-sm text-gray-600 mt-1">
                                 {reports.length} total reports
                             </p>
                         </div>
                         <button
                             onClick={downloadCSV}
-                            className="px-4 py-2 bg-black text-white text-sm rounded hover:bg-gray-800 transition-colors"
+                            className="px-3 py-2 md:px-4 bg-black text-white text-xs md:text-sm rounded hover:bg-gray-800 transition-colors whitespace-nowrap"
                             title="Download all reports as CSV"
                         >
                             Download CSV
@@ -137,22 +143,22 @@ const Admin = () => {
                         <div
                             key={report.id}
                             onClick={() => setSelectedReport(report)}
-                            className={`p-4 cursor-pointer transition-colors hover:bg-gray-50 ${selectedReport?.id === report.id ? 'bg-gray-100' : ''
+                            className={`p-3 md:p-4 cursor-pointer transition-colors hover:bg-gray-50 ${selectedReport?.id === report.id ? 'bg-gray-100' : ''
                                 }`}
                         >
                             <div className="flex items-start justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                     {report.status === 'resolved' ? (
-                                        <CheckCircle size={18} className="text-green-600" />
+                                        <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
                                     ) : (
-                                        <Clock size={18} className="text-red-600" />
+                                        <Clock size={16} className="text-red-600 flex-shrink-0" />
                                     )}
-                                    <span className="font-semibold text-black">
+                                    <span className="font-semibold text-black text-sm md:text-base">
                                         {report.category}
                                     </span>
                                 </div>
                                 <span
-                                    className={`text-xs px-2 py-1 rounded ${report.status === 'resolved'
+                                    className={`text-xs px-2 py-1 rounded flex-shrink-0 ${report.status === 'resolved'
                                         ? 'bg-green-100 text-green-800'
                                         : 'bg-red-100 text-red-800'
                                         }`}
@@ -161,32 +167,41 @@ const Admin = () => {
                                 </span>
                             </div>
 
-                            <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                            <p className="text-xs md:text-sm text-gray-700 mb-2 line-clamp-2">
                                 {report.description || 'No description provided'}
                             </p>
 
-                            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                            {/* User Email */}
+                            {report.user?.email && (
+                                <div className="text-xs text-gray-600 mb-1 flex items-center gap-1">
+                                    <span className="font-medium">User:</span>
+                                    <span className="truncate">{report.user.email}</span>
+                                </div>
+                            )}
+
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 text-xs text-gray-500 mb-1">
                                 <div className="flex items-center gap-1">
-                                    <MapPin size={12} />
-                                    <span>
+                                    <MapPin size={12} className="flex-shrink-0" />
+                                    <span className="truncate">
                                         {report.lat.toFixed(4)}, {report.lng.toFixed(4)}
                                     </span>
                                 </div>
-                                <span>{formatDate(report.created_at)}</span>
+                                <span className="text-xs">{formatDate(report.created_at)}</span>
                             </div>
 
                             {report.user_ip && (
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-500 mb-2">
                                     IP: {report.user_ip}
                                 </div>
                             )}
+
                             {report.status === 'open' && (
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleResolve(report.id);
                                     }}
-                                    className="mt-3 w-full px-3 py-1.5 bg-black text-white text-sm rounded hover:bg-gray-800 transition-colors"
+                                    className="mt-2 w-full px-3 py-1.5 bg-black text-white text-xs md:text-sm rounded hover:bg-gray-800 transition-colors"
                                 >
                                     Mark as Resolved
                                 </button>
@@ -203,7 +218,7 @@ const Admin = () => {
             </div>
 
             {/* Right Panel - Map */}
-            <div className="flex-1">
+            <div className="flex-1 h-64 md:h-auto">
                 <Map
                     selectedReport={selectedReport}
                     onReportAdded={() => setRefreshTrigger((prev) => prev + 1)}
