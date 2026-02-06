@@ -16,19 +16,14 @@ const Admin = () => {
     }, [refreshTrigger]);
 
     const fetchReports = async () => {
-        // Fetch reports with user email from auth.users
         const { data, error } = await supabase
             .from('reports')
-            .select(`
-                *,
-                user:user_id (
-                    email
-                )
-            `)
+            .select('*')
             .order('created_at', { ascending: false });
 
         if (error) {
             console.error('Error fetching reports:', error);
+            setReports([]);
         } else {
             setReports(data || []);
         }
@@ -70,7 +65,7 @@ const Admin = () => {
             report.lat,
             report.lng,
             new Date(report.created_at).toLocaleString(),
-            report.user?.email || 'N/A',
+            report.user_email || 'N/A',
             report.user_ip || 'N/A'
         ]);
 
@@ -172,10 +167,10 @@ const Admin = () => {
                             </p>
 
                             {/* User Email */}
-                            {report.user?.email && (
+                            {report.user_email && (
                                 <div className="text-xs text-gray-600 mb-1 flex items-center gap-1">
                                     <span className="font-medium">User:</span>
-                                    <span className="truncate">{report.user.email}</span>
+                                    <span className="truncate">{report.user_email}</span>
                                 </div>
                             )}
 

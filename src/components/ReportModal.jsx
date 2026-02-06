@@ -47,6 +47,7 @@ const ReportModal = ({ coords, onClose, onSubmit }) => {
                 status: 'open',
                 user_ip: userIp,
                 user_id: user.id, // Link report to authenticated user
+                user_email: user.email, // Store user email directly
             },
         ]);
 
