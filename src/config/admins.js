@@ -1,6 +1,7 @@
 // List of admin email addresses
 const ADMIN_EMAILS = [
     'kshresth2151@gmail.com',
+    'gowthaman.e@vit.ac.in',
     // Add more admin emails here as needed
 ];
 
