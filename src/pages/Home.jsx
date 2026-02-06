@@ -10,7 +10,7 @@ const Home = () => {
 
     return (
         <div className="w-screen h-screen relative">
-            <Map />
+            <Map user={user} />
 
             {/* User info and sign out button */}
             <div className="absolute top-4 left-4 bg-white border-2 border-black rounded-lg px-4 py-2 shadow-lg z-10 flex items-center gap-3">

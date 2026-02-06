@@ -3,13 +3,16 @@ import maplibregl from 'maplibre-gl';
 import { supabase } from '../supabaseClient';
 import ReportModal from './ReportModal';
 
-const Map = ({ onReportAdded, selectedReport }) => {
+const Map = ({ onReportAdded, selectedReport, user }) => {
     const mapContainer = useRef(null);
     const map = useRef(null);
     const [clickedCoords, setClickedCoords] = useState(null);
     const [reports, setReports] = useState([]);
     const markers = useRef([]);
     const tempMarker = useRef(null); // Temporary draggable marker
+
+    // Determine if we should show all reports (admin mode) or just user's reports
+    const isAdminMode = onReportAdded !== undefined;
 
     // Initialize map
     useEffect(() => {
@@ -137,19 +140,23 @@ const Map = ({ onReportAdded, selectedReport }) => {
         };
     }, []);
 
-    // Fetch reports from Supabase (only for admin dashboard)
+    // Fetch reports from Supabase
     useEffect(() => {
-        // Only fetch reports if this is the admin view (has onReportAdded callback)
-        if (onReportAdded !== undefined) {
-            fetchReports();
-        }
-    }, [onReportAdded]);
+        fetchReports();
+    }, [onReportAdded, user]);
 
     const fetchReports = async () => {
-        const { data, error } = await supabase
+        let query = supabase
             .from('reports')
             .select('*')
             .order('created_at', { ascending: false });
+
+        // If not in admin mode, only fetch current user's reports
+        if (!isAdminMode && user) {
+            query = query.eq('user_id', user.id);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             console.error('Error fetching reports:', error);
@@ -210,8 +217,15 @@ const Map = ({ onReportAdded, selectedReport }) => {
     }, [selectedReport]);
 
     const handleReportSubmit = () => {
+        // Clear the temporary marker
+        if (tempMarker.current) {
+            tempMarker.current.remove();
+            tempMarker.current = null;
+        }
+
         setClickedCoords(null);
-        fetchReports();
+        fetchReports(); // Refresh reports to show the new one
+
         if (onReportAdded) onReportAdded();
     };
 
