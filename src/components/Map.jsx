@@ -208,7 +208,7 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
             el.style.backgroundColor = isOwnReport ? '#8B5CF6' : (report.status === 'resolved' ? '#22C55E' : '#EF4444');
             el.style.cursor = 'pointer';
 
-            const deleteButtonHtml = (isGlobalMode && isOwnReport)
+            const deleteButtonHtml = isOwnReport
                 ? `<button 
                     onclick="window.deleteReport('${report.id}')" 
                     style="margin-top: 10px; width: 100%; padding: 6px; background-color: #EF4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-family: Inter, sans-serif; font-weight: 600; font-size: 11px; transition: background 0.2s;"
