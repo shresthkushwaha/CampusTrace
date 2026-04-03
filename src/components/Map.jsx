@@ -8,6 +8,7 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
     const map = useRef(null);
     const [clickedCoords, setClickedCoords] = useState(null);
     const [reports, setReports] = useState([]);
+    const [isGlobalMode, setIsGlobalMode] = useState(false);
     const markers = useRef([]);
     const tempMarker = useRef(null); // Temporary draggable marker
 
@@ -140,10 +141,28 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
         };
     }, []);
 
+    // Global deletion handler for popup buttons
+    useEffect(() => {
+        window.deleteReport = async (reportId) => {
+            if (window.confirm('🗑️ Are you sure you want to delete your report?')) {
+                const { error } = await supabase.from('reports').delete().eq('id', reportId);
+                if (error) {
+                    console.error('Error deleting report:', error);
+                    alert('❌ Failed to delete report');
+                } else {
+                    fetchReports();
+                }
+            }
+        };
+        return () => {
+            delete window.deleteReport;
+        };
+    }, [isGlobalMode]); // Re-bind if global mode changes
+
     // Fetch reports from Supabase
     useEffect(() => {
         fetchReports();
-    }, [onReportAdded, user]);
+    }, [onReportAdded, user, isGlobalMode]);
 
     const fetchReports = async () => {
         let query = supabase
@@ -151,8 +170,9 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
             .select('*')
             .order('created_at', { ascending: false });
 
-        // If not in admin mode, only fetch current user's reports
-        if (!isAdminMode && user) {
+        // Use user's ID for filtering ONLY if global mode is OFF
+        // If in admin mode, always show everything
+        if (!isGlobalMode && !isAdminMode && user) {
             query = query.eq('user_id', user.id);
         }
 
@@ -188,6 +208,15 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
             el.style.backgroundColor = isOwnReport ? '#8B5CF6' : (report.status === 'resolved' ? '#22C55E' : '#EF4444');
             el.style.cursor = 'pointer';
 
+            const deleteButtonHtml = (isGlobalMode && isOwnReport)
+                ? `<button 
+                    onclick="window.deleteReport('${report.id}')" 
+                    style="margin-top: 10px; width: 100%; padding: 6px; background-color: #EF4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-family: Inter, sans-serif; font-weight: 600; font-size: 11px; transition: background 0.2s;"
+                    onmouseover="this.style.backgroundColor='#DC2626'"
+                    onmouseout="this.style.backgroundColor='#EF4444'"
+                  >Delete My Report</button>`
+                : '';
+
             const marker = new maplibregl.Marker({ element: el })
                 .setLngLat([report.lng, report.lat])
                 .setPopup(
@@ -197,6 +226,7 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
               ${report.description || 'No description'}<br/>
               <em>Status: ${report.status}</em><br/>
               <small>IP: ${report.user_ip || 'N/A'}</small>
+              ${deleteButtonHtml}
             </div>`
                     )
                 )
@@ -204,7 +234,7 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
 
             markers.current.push(marker);
         });
-    }, [reports, onReportAdded]);
+    }, [reports, onReportAdded, isGlobalMode]);
 
     // Zoom to selected report (for admin dashboard)
     useEffect(() => {
@@ -240,8 +270,32 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
     };
 
     return (
-        <>
+        <div className="relative w-full h-full">
             <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+
+            {/* Global Mode Toggle Button */}
+            {user && (
+                <button
+                    onClick={() => {
+                        setIsGlobalMode(!isGlobalMode);
+                    }}
+                    className={`absolute bottom-6 left-1/2 -translate-x-1/2 z-10 px-6 py-3 rounded-full font-bold shadow-2xl transition-all flex items-center gap-2 border-2 ${isGlobalMode
+                            ? 'bg-white text-black border-black scale-105'
+                            : 'bg-black text-white border-white hover:scale-105'
+                        }`}
+                >
+                    {isGlobalMode ? (
+                        <>
+                            <span className="text-lg">👤</span> My Private Map
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-lg">🌍</span> Show Global Data
+                        </>
+                    )}
+                </button>
+            )}
+
             {clickedCoords && (
                 <ReportModal
                     coords={clickedCoords}
@@ -249,7 +303,7 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
                     onSubmit={handleReportSubmit}
                 />
             )}
-        </>
+        </div>
     );
 };
 
