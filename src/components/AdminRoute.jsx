@@ -1,4 +1,4 @@
-1import { Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { isAdmin } from '../config/admins';
 
