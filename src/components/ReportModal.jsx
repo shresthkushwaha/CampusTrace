@@ -8,6 +8,7 @@ const ReportModal = ({ coords, onClose, onSubmit }) => {
     const [category, setCategory] = useState('');
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
     const categories = [
         'Infrastructure',
@@ -57,8 +58,10 @@ const ReportModal = ({ coords, onClose, onSubmit }) => {
             console.error('Error submitting report:', error);
             alert('Failed to submit report. Please try again.');
         } else {
-            alert('✅ Report submitted successfully!\n\nYour report has been sent to the admin team for review. You can see your submitted reports as purple dots on the map.');
-            onSubmit();
+            setIsSuccess(true);
+            setTimeout(() => {
+                onSubmit();
+            }, 800);
         }
     };
 
@@ -120,10 +123,13 @@ const ReportModal = ({ coords, onClose, onSubmit }) => {
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting}
-                            className="flex-1 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isSubmitting || isSuccess}
+                            className={`flex-1 px-4 py-2 text-white rounded-md transition-all duration-300 disabled:cursor-not-allowed ${isSuccess
+                                    ? 'bg-green-600'
+                                    : 'bg-black hover:bg-gray-800'
+                                } ${isSubmitting ? 'opacity-50' : ''}`}
                         >
-                            {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                            {isSuccess ? '✅ Submitted!' : isSubmitting ? 'Submitting...' : 'Submit Report'}
                         </button>
                     </div>
                 </form>
