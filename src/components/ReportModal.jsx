@@ -57,7 +57,7 @@ const ReportModal = ({ coords, onClose, onSubmit }) => {
             console.error('Error submitting report:', error);
             alert('Failed to submit report. Please try again.');
         } else {
-            alert('✅ Report submitted successfully!\n\nYour report has been sent to the admin team for review. Only admins can view and manage reports.');
+            alert('✅ Report submitted successfully!\n\nYour report has been sent to the admin team for review. You can see your submitted reports as purple dots on the map.');
             onSubmit();
         }
     };

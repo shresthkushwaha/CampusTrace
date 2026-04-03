@@ -215,6 +215,7 @@ const Admin = () => {
             {/* Right Panel - Map */}
             <div className="flex-1 h-64 md:h-auto">
                 <Map
+                    user={user}
                     selectedReport={selectedReport}
                     onReportAdded={() => setRefreshTrigger((prev) => prev + 1)}
                 />

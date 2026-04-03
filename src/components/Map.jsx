@@ -169,8 +169,8 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
     useEffect(() => {
         if (!map.current) return;
 
-        // Only show markers in admin view
-        if (onReportAdded === undefined) return;
+        // Show markers for both admin and user view
+        // if (onReportAdded === undefined) return;
 
         // Clear existing markers
         markers.current.forEach((marker) => marker.remove());
@@ -184,7 +184,8 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
             el.style.height = '24px';
             el.style.borderRadius = '50%';
             el.style.border = '2px solid #000';
-            el.style.backgroundColor = report.status === 'resolved' ? '#22C55E' : '#EF4444';
+            const isOwnReport = user && report.user_id === user.id;
+            el.style.backgroundColor = isOwnReport ? '#8B5CF6' : (report.status === 'resolved' ? '#22C55E' : '#EF4444');
             el.style.cursor = 'pointer';
 
             const marker = new maplibregl.Marker({ element: el })
