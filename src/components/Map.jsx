@@ -102,8 +102,11 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
 
         // Click handler for two-step pin placement
         map.current.on('click', (e) => {
-            // If there's already a temp marker, don't create a new one on map click
-            if (tempMarker.current) return;
+            // If there's already a temp marker, remove it first
+            if (tempMarker.current) {
+                tempMarker.current.remove();
+                tempMarker.current = null;
+            }
 
             // Create draggable temporary marker
             const el = document.createElement('div');
@@ -125,7 +128,8 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
                 .addTo(map.current);
 
             // Click on marker to confirm and open modal
-            el.addEventListener('click', () => {
+            el.addEventListener('click', (ev) => {
+                ev.stopPropagation(); // Prevent map click from firing and creating a new marker
                 const lngLat = tempMarker.current.getLngLat();
                 setClickedCoords({ lat: lngLat.lat, lng: lngLat.lng });
                 tempMarker.current.remove();
