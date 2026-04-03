@@ -17,7 +17,6 @@ body {
 /* Custom marker styles */
 .report-marker {
   cursor: pointer;
-  transition: transform 0.2s;
 }
 
 .report-marker:hover {
