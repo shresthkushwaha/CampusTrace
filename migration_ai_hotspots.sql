@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS transportation_hotspots (
 -- Create the junction table between hotspots and reports
 CREATE TABLE IF NOT EXISTS hotspot_reports (
     hotspot_id UUID REFERENCES transportation_hotspots(id) ON DELETE CASCADE,
-    report_id UUID REFERENCES reports(id) ON DELETE CASCADE,
+    report_id BIGINT REFERENCES reports(id) ON DELETE CASCADE,
     PRIMARY KEY (hotspot_id, report_id)
 );
 
