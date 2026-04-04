@@ -12,7 +12,12 @@ export const aiService = {
      */
     async refreshHotspots() {
         try {
-            console.log(`Step 1: Fetching ${reports?.length || 0} reports...`);
+            // 1. Fetch current reports
+            const { data: reports, error: reportsError } = await supabase
+                .from('reports')
+                .select('id, category, description, lat, lng');
+            
+            console.log(`Step 1: Fetched ${reports?.length || 0} reports.`);
             if (reportsError) throw reportsError;
             if (!reports || reports.length === 0) {
                 console.warn("No reports found to analyze.");
