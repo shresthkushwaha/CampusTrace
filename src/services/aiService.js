@@ -37,11 +37,13 @@ export const aiService = {
             
             const prompt = `
                 You are a "Mobility Design" Analyst specialized in campus accessibility. 
-                Task: Extract and group "Mobility Issues" from the following campus reports.
+                Task: Extract and identify EVERY unique "Mobility Issue" from the following campus reports.
                 
-                CRITICAL RULE: Focus ONLY on the "Problems" and "Design Flaws". 
-                DO NOT generate ideas, suggestions, or design solutions. 
-                Focus strictly on the mobility frictions extracted from the reports.
+                CRITICAL GOAL: MAXIMUM GRANULARITY. 
+                Do not group different problems into broad categories. If three reports point to three different broken sidewalk sections, create three distinct issues. 
+                Find as many unique mobility issues as possible.
+                
+                CRITICAL RULE: Focus ONLY on "Problems". DO NOT provide solutions.
                 
                 Existing Mobility Themes: ${existingHotspots?.map(h => h.theme_title).join(', ') || 'None yet'}
                 
@@ -49,20 +51,19 @@ export const aiService = {
                 ${reports.map(r => `ID: ${r.id}, Category: ${r.category}, Description: ${r.description}`).join('\n')}
                 
                 Guidelines:
-                1. Group reports into cohesive "Mobility Issue" hotspots.
-                2. If an existing theme fits, reuse it to maintain data stability.
-                3. The title must reflect a "Problem" (e.g., "Poor Sidewalk Connectivity" instead of "Improve Sidewalks").
-                4. The summary must strictly describe the problem extracted from the reports.
-                5. For each issue, provide:
-                   - title: A concise problem name (max 5 words).
-                   - summary: A 1-sentence consolidated problem statement.
-                   - severity: A number from 1 (minor friction) to 5 (critical blockage).
-                   - reportIds: An array of IDs belonging to this issue.
+                1. Split issues by location and specific type of friction. 
+                2. If two reports are nearly identical, they can be grouped, but if there is any unique nuance, split them.
+                3. The title must reflect a "Problem" (e.g., "Sharp Curb at Entrance B" instead of "Campus Curbs").
+                4. For each issue, provide:
+                   - title: Highly specific problem name.
+                   - summary: Detailed problem statement from the report.
+                   - severity: 1-5.
+                   - reportIds: IDs for this specific issue.
                     
-                Output MUST be valid JSON only, in this format:
+                Output MUST be valid JSON only:
                 {
                   "hotspots": [
-                    { "title": "Mobility Issue Title", "summary": "...", "severity": 3, "reportIds": ["id1", "id2"] }
+                    { "title": "Specific Mobility Issue", "summary": "...", "severity": 4, "reportIds": ["id1"] }
                   ]
                 }
             `;
