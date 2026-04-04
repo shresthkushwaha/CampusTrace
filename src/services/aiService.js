@@ -36,35 +36,40 @@ export const aiService = {
             const model = genAI.getGenerativeModel({ model: modelName });
             
             const prompt = `
-                You are a campus transportation analyst. 
-                Task: Group the following campus reports into thematic "Transportation Problems" hotspots.
+                You are a "Mobility Design" Analyst specialized in campus accessibility. 
+                Task: Extract and group "Mobility Issues" from the following campus reports.
                 
-                Existing Themes: ${existingHotspots?.map(h => h.theme_title).join(', ') || 'None yet'}
+                CRITICAL RULE: Focus ONLY on the "Problems" and "Design Flaws". 
+                DO NOT generate ideas, suggestions, or design solutions. 
+                Focus strictly on the mobility frictions extracted from the reports.
+                
+                Existing Mobility Themes: ${existingHotspots?.map(h => h.theme_title).join(', ') || 'None yet'}
                 
                 Reports to Analyze:
                 ${reports.map(r => `ID: ${r.id}, Category: ${r.category}, Description: ${r.description}`).join('\n')}
                 
                 Guidelines:
-                1. Use existing themes if possible to maintain stability.
-                2. Only create a NEW theme if the reports don't fit existing ones.
-                3. Connect every report to a theme.
-                4. For each theme, provide:
-                   - title: A concise name (max 5 words).
-                   - summary: A 1-sentence consolidated summary of the issues.
-                   - severity: A number from 1 (low) to 5 (critical).
-                   - reportIds: An array of IDs belonging to this theme.
-                   
+                1. Group reports into cohesive "Mobility Issue" hotspots.
+                2. If an existing theme fits, reuse it to maintain data stability.
+                3. The title must reflect a "Problem" (e.g., "Poor Sidewalk Connectivity" instead of "Improve Sidewalks").
+                4. The summary must strictly describe the problem extracted from the reports.
+                5. For each issue, provide:
+                   - title: A concise problem name (max 5 words).
+                   - summary: A 1-sentence consolidated problem statement.
+                   - severity: A number from 1 (minor friction) to 5 (critical blockage).
+                   - reportIds: An array of IDs belonging to this issue.
+                    
                 Output MUST be valid JSON only, in this format:
                 {
                   "hotspots": [
-                    { "title": "Theme Title", "summary": "...", "severity": 3, "reportIds": ["id1", "id2"] }
+                    { "title": "Mobility Issue Title", "summary": "...", "severity": 3, "reportIds": ["id1", "id2"] }
                   ]
                 }
             `;
 
             const result = await model.generateContent(prompt);
             const responseText = result.response.text();
-            console.log("Step 3: AI Response received. Length:", responseText.length);
+            console.log("Step 3: AI Response received. Processing Mobility Issues...");
             
             // Extract JSON from response (handling markdown code blocks more strictly)
             const jsonBody = responseText.includes('```json') 

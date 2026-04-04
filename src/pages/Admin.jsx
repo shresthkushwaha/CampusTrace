@@ -223,10 +223,10 @@ const Admin = () => {
                     selectedHotspot={selectedHotspot}
                     onReportAdded={() => setRefreshTrigger((prev) => prev + 1)}
                 />
+                {/* Mobility Sidebar (Admin Mode) */}
                 <TransportationSidebar 
-                    user={user}
-                    isAdmin={userIsAdmin}
-                    onHotspotSelect={setSelectedHotspot}
+                    onSelectHotspot={setSelectedHotspot} 
+                    isAdmin={true} 
                 />
             </div>
         </div>

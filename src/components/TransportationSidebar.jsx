@@ -64,14 +64,14 @@ const TransportationSidebar = ({ user, isAdmin, onHotspotSelect }) => {
             <div className={`p-6 flex flex-col h-full overflow-hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-black border-b-2 border-purple-500 pb-1">
-                        Transportation Problems
+                        Mobility Issues
                     </h2>
                     {isAdmin && (
                         <button 
                             onClick={handleRefresh}
                             disabled={isRefreshing}
                             className={`p-2 rounded-full hover:bg-gray-100 transition-all ${isRefreshing ? 'animate-spin' : ''}`}
-                            title="Refresh AI Insights"
+                            title="Refresh Mobility Insights"
                         >
                             <RefreshCw size={18} />
                         </button>
@@ -82,12 +82,12 @@ const TransportationSidebar = ({ user, isAdmin, onHotspotSelect }) => {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-40 space-y-2 text-gray-500">
                             <RefreshCw size={24} className="animate-spin" />
-                            <p className="text-sm">Loading hotspots...</p>
+                            <p className="text-sm">Loading mobility data...</p>
                         </div>
                     ) : hotspots.length === 0 ? (
                         <div className="text-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                             <AlertCircle size={24} className="mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-500 italic">No consolidated hotspots found. Click refresh if you are an admin.</p>
+                            <p className="text-sm text-gray-500 italic">No mobility issues found. Click refresh if you are an admin.</p>
                         </div>
                     ) : (
                         hotspots.map((hotspot) => (
@@ -125,7 +125,7 @@ const TransportationSidebar = ({ user, isAdmin, onHotspotSelect }) => {
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-gray-100 italic text-[10px] text-gray-400 text-center">
-                    Powered by AI Analysis (Gemma)
+                    Powered by Mobility Design AI (Gemma/Gemini)
                 </div>
             </div>
         </div>
