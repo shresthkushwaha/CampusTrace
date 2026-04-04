@@ -39,7 +39,12 @@ export const aiService = {
                 You are a "Mobility Design" Analyst. 
                 Context: The design team will use your report to create innovative mobility solutions (e.g., drones, cycles, automated last-mile transit).
                 
-                Task: Identify the MOST CRITICAL "Mobility Issues" from these campus reports.
+                Task: Identify the MOST CRITICAL "Mobility Issues" from these 101 campus reports.
+                
+                QUANTITY REQUIREMENT: 
+                You MUST identify MORE THAN 20 but LESS THAN 30 unique issues. 
+                Aim for EXACTLY 25 unique mobility issues. 
+                Do NOT over-consolidate; find specific, granular bottlenecks.
                 
                 CRITICAL RULE 1: IDENTIFY PROBLEMS ONLY.
                 Strictly describe the physical, temporal, or spatial barriers to mobility found in the data.
@@ -49,14 +54,12 @@ export const aiService = {
                 DO NOT mention what can be made (e.g., no "this is a good spot for a drone").
                 Keep the focus 100% on the friction and the bottleneck, not the remedy.
                 
-                Limit: Find a maximum of 25 high-impact issues.
-                
                 Reports to Analyze:
                 ${reports.map(r => `ID: ${r.id}, Category: ${r.category}, Description: ${r.description}`).join('\n')}
                 
                 Guidelines:
                 1. Look for systemic patterns that hinder flow (e.g., vertical barriers, long wait times, congested nodes).
-                2. Group reports only if they define a single bottleneck or a clear spatial friction point.
+                2. Split issues by proximity and specific type of friction.
                 3. Title must be a specific problem statement (e.g., "Vertical Accessibility Gap at Building A").
                 4. Summary must detail the specific user friction extracted from the reports.
                     
