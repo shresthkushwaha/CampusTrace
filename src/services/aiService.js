@@ -85,11 +85,15 @@ export const aiService = {
             const { hotspots } = JSON.parse(jsonBody);
             console.log(`Step 4: Parsed ${hotspots?.length || 0} thematic hotspots.`);
 
-            // 4. Process and Calculate Boundaries
             const processedHotspots = hotspots.map(hotspot => {
-                const associatedReports = reports.filter(r => hotspot.reportIds.includes(r.id));
+                // Ensure ID matching handles both string and number types (AI returns strings, DB uses bigints)
+                const reportIdStrings = hotspot.reportIds.map(id => String(id));
+                const associatedReports = reports.filter(r => reportIdStrings.includes(String(r.id)));
                 
-                if (associatedReports.length === 0) return null;
+                if (associatedReports.length === 0) {
+                    console.warn(`Hotspot "${hotspot.title}" has no matching reports. IDs sought:`, hotspot.reportIds);
+                    return null;
+                }
 
                 // Simple Centroid Calculation
                 const avgLat = associatedReports.reduce((sum, r) => sum + r.lat, 0) / associatedReports.length;
