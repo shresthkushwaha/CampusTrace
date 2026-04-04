@@ -30,8 +30,8 @@ export const aiService = {
                 .select('id, theme_title');
 
             // 3. Prepare the Prompt
-            // Using the ultra-capable Gemma 4 31B model for high-reasoning thematic clustering.
-            const modelName = "gemma-4-31b-it";
+            // Using the ultra-capable and fast Gemini 3.1 Flash Lite model
+            const modelName = "gemini-3.1-flash-lite-preview";
             console.log(`Step 2: Connecting to AI (${modelName})...`);
             const model = genAI.getGenerativeModel({ model: modelName });
             
