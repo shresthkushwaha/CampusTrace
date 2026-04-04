@@ -12,13 +12,12 @@ export const aiService = {
      */
     async refreshHotspots() {
         try {
-            // 1. Fetch current reports
-            const { data: reports, error: reportsError } = await supabase
-                .from('reports')
-                .select('id, category, description, lat, lng');
-            
+            console.log(`Step 1: Fetching ${reports?.length || 0} reports...`);
             if (reportsError) throw reportsError;
-            if (!reports || reports.length === 0) return { success: false, message: 'No reports to analyze.' };
+            if (!reports || reports.length === 0) {
+                console.warn("No reports found to analyze.");
+                return { success: false, message: 'No reports to analyze. Submit some pins first!' };
+            }
 
             // 2. Fetch existing hotspots for context
             const { data: existingHotspots } = await supabase
@@ -28,7 +27,7 @@ export const aiService = {
             // 3. Prepare the Prompt
             // Using the ultra-capable Gemma 4 31B model for high-reasoning thematic clustering.
             const modelName = "gemma-4-31b-it";
-            console.log(`Analyzing with ${modelName}...`);
+            console.log(`Step 2: Connecting to AI (${modelName})...`);
             const model = genAI.getGenerativeModel({ model: modelName });
             
             const prompt = `
@@ -60,11 +59,20 @@ export const aiService = {
 
             const result = await model.generateContent(prompt);
             const responseText = result.response.text();
+            console.log("Step 3: AI Response received. Length:", responseText.length);
             
-            // Extract JSON from response (handling potential markdown formatting)
-            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error("Failed to parse AI response as JSON");
-            const { hotspots } = JSON.parse(jsonMatch[0]);
+            // Extract JSON from response (handling markdown code blocks more strictly)
+            const jsonBody = responseText.includes('```json') 
+                ? responseText.split('```json')[1].split('```')[0]
+                : responseText.match(/\{[\s\S]*\}/)?.[0];
+
+            if (!jsonBody) {
+                console.error("Raw AI Response:", responseText);
+                throw new Error("Could not extract JSON from AI response.");
+            }
+
+            const { hotspots } = JSON.parse(jsonBody);
+            console.log(`Step 4: Parsed ${hotspots?.length || 0} thematic hotspots.`);
 
             // 4. Process and Calculate Boundaries
             const processedHotspots = hotspots.map(hotspot => {
@@ -95,13 +103,17 @@ export const aiService = {
             }).filter(Boolean);
 
             // 5. Update Supabase
-            // For simplicity in this version, we clear and re-insert (but using the same titles for stability)
-            // A more advanced version would diff them.
+            console.log("Step 5: Cleaning up old hotspots and updating database...");
             
-            // Delete old links and hotspots
-            await supabase.from('hotspot_reports').delete().neq('hotspot_id', '00000000-0000-0000-0000-000000000000');
-            await supabase.from('transportation_hotspots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            // DELETE OLD DATA
+            const { error: delLinksError } = await supabase.from('hotspot_reports').delete().neq('hotspot_id', '00000000-0000-0000-0000-000000000000');
+            const { error: delHotspotsError } = await supabase.from('transportation_hotspots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            
+            if (delLinksError || delHotspotsError) {
+                console.error("Cleanup Error:", delLinksError || delHotspotsError);
+            }
 
+            let insertedCount = 0;
             for (const h of processedHotspots) {
                 const { data: newHotspot, error: hError } = await supabase
                     .from('transportation_hotspots')
@@ -115,18 +127,24 @@ export const aiService = {
                     .select()
                     .single();
 
-                if (hError) console.error("Error inserting hotspot:", hError);
+                if (hError) {
+                    console.error(`Error inserting hotspot "${h.title}":`, hError);
+                    continue;
+                }
 
                 if (newHotspot) {
+                    insertedCount++;
                     const links = h.reportIds.map(rid => ({
                         hotspot_id: newHotspot.id,
                         report_id: rid
                     }));
-                    await supabase.from('hotspot_reports').insert(links);
+                    const { error: linkError } = await supabase.from('hotspot_reports').insert(links);
+                    if (linkError) console.error("Error linking reports:", linkError);
                 }
             }
 
-            return { success: true, count: processedHotspots.length };
+            console.log(`Success! Inserted ${insertedCount} hotspots.`);
+            return { success: true, count: insertedCount };
         } catch (error) {
             console.error("AI Refresh Error:", error);
             return { success: false, error: error.message };
