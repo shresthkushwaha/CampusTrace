@@ -29,8 +29,14 @@ const Map = ({ onReportAdded, selectedReport, selectedHotspot, user }) => {
     const [clickedCoords, setClickedCoords] = useState(null);
     const [reports, setReports] = useState([]);
     const [isGlobalMode, setIsGlobalMode] = useState(false);
+    const isGlobalModeRef = useRef(isGlobalMode);
     const markers = useRef([]);
     const tempMarker = useRef(null); // Temporary draggable marker
+
+    // Sync ref with state to avoid stale closures in map events
+    useEffect(() => {
+        isGlobalModeRef.current = isGlobalMode;
+    }, [isGlobalMode]);
 
     // Determine if we should show all reports (admin mode) or just user's reports
     const isAdminMode = onReportAdded !== undefined;
@@ -162,7 +168,8 @@ const Map = ({ onReportAdded, selectedReport, selectedHotspot, user }) => {
         // Click handler for two-step pin placement
         map.current.on('click', (e) => {
             // ONLY allow pinning in Private Mode
-            if (isGlobalMode) {
+            // Use ref to avoid stale closure from useEffect
+            if (isGlobalModeRef.current) {
                 console.log("Pin placement is disabled in Global Mode.");
                 return;
             }
@@ -463,11 +470,11 @@ const Map = ({ onReportAdded, selectedReport, selectedHotspot, user }) => {
                 >
                     {isGlobalMode ? (
                         <>
-                            <span className="text-lg">👤</span> My Private Map
+                            <span className="text-lg">👤</span> Switch to Private Map
                         </>
                     ) : (
                         <>
-                            <span className="text-lg">🌍</span> Show Global Data
+                            <span className="text-lg">🌍</span> Switch to Global Data
                         </>
                     )}
                 </button>
