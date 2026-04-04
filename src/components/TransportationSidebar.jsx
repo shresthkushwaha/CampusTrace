@@ -48,19 +48,20 @@ const TransportationSidebar = ({ user, isAdmin, onHotspotSelect }) => {
     return (
         <div 
             className={`absolute top-0 right-0 h-full bg-white border-l-2 border-black z-20 transition-all duration-300 shadow-2xl flex flex-col ${
-                isOpen ? 'w-80 md:w-96' : 'w-0 overflow-hidden'
+                isOpen ? 'w-80 md:w-96' : 'w-0'
             }`}
         >
-            {/* Toggle Button */}
+            {/* Toggle Button - Moved slightly to ensure it stays visible when closed */}
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className={`absolute top-1/2 -left-10 bg-white border-2 border-black p-2 rounded-l-md transform -translate-y-1/2 hover:bg-gray-100 transition-colors shadow-lg z-30`}
+                className="absolute top-1/2 -left-10 bg-white border-2 border-black p-2 rounded-l-md transform -translate-y-1/2 hover:bg-gray-100 transition-colors shadow-lg z-30"
+                style={{ display: 'block' }}
             >
                 {isOpen ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
 
-            {/* Sidebar Content */}
-            <div className="p-6 flex flex-col h-full">
+            {/* Sidebar Content - Wrapped in overflow-hidden to handle the width transition */}
+            <div className={`p-6 flex flex-col h-full overflow-hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-black border-b-2 border-purple-500 pb-1">
                         Transportation Problems
@@ -111,7 +112,7 @@ const TransportationSidebar = ({ user, isAdmin, onHotspotSelect }) => {
                                         S{hotspot.severity}
                                     </span>
                                 </div>
-                                <p className="text-xs text-gray-600 line-clamp-3 mb-3 leading-relaxed">
+                                <p className={`text-xs text-gray-600 mb-3 leading-relaxed ${selectedId === hotspot.id ? '' : 'line-clamp-3'}`}>
                                     {hotspot.summary}
                                 </p>
                                 <div className="flex items-center gap-1 text-[10px] font-semibold text-purple-600">
