@@ -161,6 +161,12 @@ const Map = ({ onReportAdded, selectedReport, selectedHotspot, user }) => {
 
         // Click handler for two-step pin placement
         map.current.on('click', (e) => {
+            // ONLY allow pinning in Private Mode
+            if (isGlobalMode) {
+                console.log("Pin placement is disabled in Global Mode.");
+                return;
+            }
+
             // If there's already a temp marker, remove it first
             if (tempMarker.current) {
                 tempMarker.current.remove();
@@ -444,6 +450,11 @@ const Map = ({ onReportAdded, selectedReport, selectedHotspot, user }) => {
                 <button
                     onClick={() => {
                         setIsGlobalMode(!isGlobalMode);
+                        // Clear active temp marker if mode changes
+                        if (tempMarker.current) {
+                            tempMarker.current.remove();
+                            tempMarker.current = null;
+                        }
                     }}
                     className={`absolute bottom-6 left-1/2 -translate-x-1/2 z-10 px-6 py-3 rounded-full font-bold shadow-2xl transition-all flex items-center gap-2 border-2 ${isGlobalMode
                             ? 'bg-white text-black border-black scale-105'
