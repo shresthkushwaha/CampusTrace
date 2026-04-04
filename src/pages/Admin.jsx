@@ -4,12 +4,16 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../AuthContext';
 import Map from '../components/Map';
+import TransportationSidebar from '../components/TransportationSidebar';
+import { isAdmin } from '../config/admins';
 
 const Admin = () => {
     const { user, signOut } = useAuth();
     const [reports, setReports] = useState([]);
     const [selectedReport, setSelectedReport] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [selectedHotspot, setSelectedHotspot] = useState(null);
+    const userIsAdmin = isAdmin(user?.email);
 
     useEffect(() => {
         fetchReports();
@@ -212,12 +216,17 @@ const Admin = () => {
                 </div>
             </div>
 
-            {/* Right Panel - Map */}
-            <div className="flex-1 h-64 md:h-auto">
+            <div className="flex-1 h-64 md:h-auto relative">
                 <Map
                     user={user}
                     selectedReport={selectedReport}
+                    selectedHotspot={selectedHotspot}
                     onReportAdded={() => setRefreshTrigger((prev) => prev + 1)}
+                />
+                <TransportationSidebar 
+                    user={user}
+                    isAdmin={userIsAdmin}
+                    onHotspotSelect={setSelectedHotspot}
                 />
             </div>
         </div>

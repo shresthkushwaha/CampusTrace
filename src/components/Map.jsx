@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl';
 import { supabase } from '../supabaseClient';
 import ReportModal from './ReportModal';
 
-const Map = ({ onReportAdded, selectedReport, user }) => {
+const Map = ({ onReportAdded, selectedReport, selectedHotspot, user }) => {
     const mapContainer = useRef(null);
     const map = useRef(null);
     const [clickedCoords, setClickedCoords] = useState(null);
@@ -98,6 +98,45 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
                 }),
                 'top-right'
             );
+
+            // Add empty source for hotspots
+            map.current.addSource('hotspots', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] }
+            });
+
+            // Add layer for hotspot fill
+            map.current.addLayer({
+                id: 'hotspot-fill',
+                type: 'fill',
+                source: 'hotspots',
+                paint: {
+                    'fill-color': [
+                        'case',
+                        ['>=', ['get', 'severity'], 4], '#EF4444',
+                        ['>=', ['get', 'severity'], 3], '#F97316',
+                        '#3B82F6'
+                    ],
+                    'fill-opacity': 0.15
+                }
+            });
+
+            // Add layer for hotspot border
+            map.current.addLayer({
+                id: 'hotspot-border',
+                type: 'line',
+                source: 'hotspots',
+                paint: {
+                    'line-color': [
+                        'case',
+                        ['>=', ['get', 'severity'], 4], '#B91C1C',
+                        ['>=', ['get', 'severity'], 3], '#C2410C',
+                        '#1D4ED8'
+                    ],
+                    'line-width': 2,
+                    'line-dasharray': [2, 2]
+                }
+            });
         });
 
         // Click handler for two-step pin placement
@@ -250,6 +289,87 @@ const Map = ({ onReportAdded, selectedReport, user }) => {
             });
         }
     }, [selectedReport]);
+
+    // Update hotspots visualization
+    useEffect(() => {
+        if (!map.current) return;
+
+        const updateHotspots = async () => {
+            const { data, error } = await supabase.from('transportation_hotspots').select('*');
+            if (error) {
+                console.error('Error fetching hotspots for map:', error);
+                return;
+            }
+
+            // Function to generate a circle polygon GeoJSON
+            const createCircle = (center, radiusInMeters, points = 64) => {
+                const coords = {
+                    latitude: center[1],
+                    longitude: center[0]
+                };
+                const km = radiusInMeters / 1000;
+                const ret = [];
+                const distanceX = km / (111.32 * Math.cos(coords.latitude * Math.PI / 180));
+                const distanceY = km / 110.574;
+
+                let theta, x, y;
+                for (let i = 0; i < points; i++) {
+                    theta = (i / points) * (2 * Math.PI);
+                    x = distanceX * Math.cos(theta);
+                    y = distanceY * Math.sin(theta);
+                    ret.push([coords.longitude + x, coords.latitude + y]);
+                }
+                ret.push(ret[0]); // Close polygon
+                return [ret];
+            };
+
+            const features = (data || []).map(h => ({
+                type: 'Feature',
+                properties: { 
+                    id: h.id, 
+                    title: h.theme_title, 
+                    severity: h.severity,
+                    isSelected: selectedHotspot?.id === h.id
+                },
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: createCircle(h.boundary_data.center, h.boundary_data.radius)
+                }
+            }));
+
+            const source = map.current.getSource('hotspots');
+            if (source) {
+                source.setData({ type: 'FeatureCollection', features });
+            }
+
+            // Update opacity/focus based on selection
+            if (map.current.getLayer('hotspot-fill')) {
+                map.current.setPaintProperty('hotspot-fill', 'fill-opacity', [
+                    'case',
+                    ['==', ['get', 'id'], selectedHotspot?.id || ''], 0.4,
+                    0.15
+                ]);
+            }
+        };
+
+        if (map.current.isStyleLoaded()) {
+            updateHotspots();
+        } else {
+            map.current.on('load', updateHotspots);
+        }
+    }, [selectedHotspot]);
+
+    // Fly to selected hotspot
+    useEffect(() => {
+        if (selectedHotspot && map.current) {
+            map.current.flyTo({
+                center: selectedHotspot.boundary_data.center,
+                zoom: 17,
+                duration: 2000,
+                essential: true
+            });
+        }
+    }, [selectedHotspot]);
 
     const handleReportSubmit = () => {
         // Clear the temporary marker
