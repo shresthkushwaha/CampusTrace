@@ -342,12 +342,19 @@ const Map = ({ onReportAdded, selectedReport, selectedHotspot, user }) => {
                 source.setData({ type: 'FeatureCollection', features });
             }
 
-            // Update opacity/focus based on selection
+            // Update visibility/focus based on selection
             if (map.current.getLayer('hotspot-fill')) {
                 map.current.setPaintProperty('hotspot-fill', 'fill-opacity', [
                     'case',
                     ['==', ['get', 'id'], selectedHotspot?.id || ''], 0.4,
-                    0.15
+                    0 // Hide unselected hotspots entirely
+                ]);
+            }
+            if (map.current.getLayer('hotspot-border')) {
+                map.current.setPaintProperty('hotspot-border', 'line-opacity', [
+                    'case',
+                    ['==', ['get', 'id'], selectedHotspot?.id || ''], 1,
+                    0 // Hide unselected borders entirely
                 ]);
             }
         };
