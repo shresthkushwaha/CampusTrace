@@ -36,34 +36,34 @@ export const aiService = {
             const model = genAI.getGenerativeModel({ model: modelName });
             
             const prompt = `
-                You are a "Mobility Design" Analyst specialized in campus accessibility. 
-                Task: Extract and identify EVERY unique "Mobility Issue" from the following campus reports.
+                You are a "Mobility Design" Analyst. 
+                Context: The design team will use your report to create innovative mobility solutions (e.g., drones, cycles, automated last-mile transit).
                 
-                CRITICAL GOAL: MAXIMUM GRANULARITY. 
-                Do not group different problems into broad categories. If three reports point to three different broken sidewalk sections, create three distinct issues. 
-                Find as many unique mobility issues as possible.
+                Task: Identify the MOST CRITICAL "Mobility Issues" from these campus reports.
                 
-                CRITICAL RULE: Focus ONLY on "Problems". DO NOT provide solutions.
+                CRITICAL RULE 1: IDENTIFY PROBLEMS ONLY.
+                Strictly describe the physical, temporal, or spatial barriers to mobility found in the data.
                 
-                Existing Mobility Themes: ${existingHotspots?.map(h => h.theme_title).join(', ') || 'None yet'}
+                CRITICAL RULE 2: NO SOLUTIONS.
+                DO NOT suggest any fixes (e.g., no "we should build X").
+                DO NOT mention what can be made (e.g., no "this is a good spot for a drone").
+                Keep the focus 100% on the friction and the bottleneck, not the remedy.
+                
+                Limit: Find a maximum of 25 high-impact issues.
                 
                 Reports to Analyze:
                 ${reports.map(r => `ID: ${r.id}, Category: ${r.category}, Description: ${r.description}`).join('\n')}
                 
                 Guidelines:
-                1. Split issues by location and specific type of friction. 
-                2. If two reports are nearly identical, they can be grouped, but if there is any unique nuance, split them.
-                3. The title must reflect a "Problem" (e.g., "Sharp Curb at Entrance B" instead of "Campus Curbs").
-                4. For each issue, provide:
-                   - title: Highly specific problem name.
-                   - summary: Detailed problem statement from the report.
-                   - severity: 1-5.
-                   - reportIds: IDs for this specific issue.
+                1. Look for systemic patterns that hinder flow (e.g., vertical barriers, long wait times, congested nodes).
+                2. Group reports only if they define a single bottleneck or a clear spatial friction point.
+                3. Title must be a specific problem statement (e.g., "Vertical Accessibility Gap at Building A").
+                4. Summary must detail the specific user friction extracted from the reports.
                     
-                Output MUST be valid JSON only:
+                Output MUST be valid JSON:
                 {
                   "hotspots": [
-                    { "title": "Specific Mobility Issue", "summary": "...", "severity": 4, "reportIds": ["id1"] }
+                    { "title": "Specific Mobility Issue", "summary": "Detailed statement of friction", "severity": 4, "reportIds": ["id1", "id2"] }
                   ]
                 }
             `;
