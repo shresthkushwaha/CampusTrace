@@ -26,8 +26,10 @@ export const aiService = {
                 .select('id, theme_title');
 
             // 3. Prepare the Prompt
-            // We ask for a strict JSON format to parse it easily.
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            // Using the ultra-capable Gemma 4 31B model for high-reasoning thematic clustering.
+            const modelName = "gemma-4-31b-it";
+            console.log(`Analyzing with ${modelName}...`);
+            const model = genAI.getGenerativeModel({ model: modelName });
             
             const prompt = `
                 You are a campus transportation analyst. 
