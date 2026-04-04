@@ -3,6 +3,26 @@ import maplibregl from 'maplibre-gl';
 import { supabase } from '../supabaseClient';
 import ReportModal from './ReportModal';
 
+const getConvexHull = (points) => {
+    if (points.length <= 2) return points;
+    const sorted = points.slice().sort((a, b) => a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1]);
+    const crossProduct = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lower = [];
+    for (let p of sorted) {
+        while (lower.length >= 2 && crossProduct(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+        lower.push(p);
+    }
+    const upper = [];
+    for (let i = sorted.length - 1; i >= 0; i--) {
+        let p = sorted[i];
+        while (upper.length >= 2 && crossProduct(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+        upper.push(p);
+    }
+    lower.pop();
+    upper.pop();
+    return lower.concat(upper);
+};
+
 const Map = ({ onReportAdded, selectedReport, selectedHotspot, user }) => {
     const mapContainer = useRef(null);
     const map = useRef(null);
@@ -295,47 +315,62 @@ const Map = ({ onReportAdded, selectedReport, selectedHotspot, user }) => {
         if (!map.current) return;
 
         const updateHotspots = async () => {
-            const { data, error } = await supabase.from('transportation_hotspots').select('*');
+            const { data, error } = await supabase
+                .from('transportation_hotspots')
+                .select('*, hotspot_reports(reports(lat, lng))');
+            
             if (error) {
                 console.error('Error fetching hotspots for map:', error);
                 return;
             }
 
-            // Function to generate a circle polygon GeoJSON
-            const createCircle = (center, radiusInMeters, points = 64) => {
-                const coords = {
-                    latitude: center[1],
-                    longitude: center[0]
-                };
+            // Helper to generate a small circle (for fallback)
+            const createCircle = (center, radiusInMeters, points = 32) => {
                 const km = radiusInMeters / 1000;
-                const ret = [];
-                const distanceX = km / (111.32 * Math.cos(coords.latitude * Math.PI / 180));
+                const distanceX = km / (111.32 * Math.cos(center[1] * Math.PI / 180));
                 const distanceY = km / 110.574;
-
-                let theta, x, y;
-                for (let i = 0; i < points; i++) {
-                    theta = (i / points) * (2 * Math.PI);
-                    x = distanceX * Math.cos(theta);
-                    y = distanceY * Math.sin(theta);
-                    ret.push([coords.longitude + x, coords.latitude + y]);
+                const ret = [];
+                for (let i = 0; i <= points; i++) {
+                    const theta = (i / points) * (2 * Math.PI);
+                    ret.push([center[0] + distanceX * Math.cos(theta), center[1] + distanceY * Math.sin(theta)]);
                 }
-                ret.push(ret[0]); // Close polygon
                 return [ret];
             };
 
-            const features = (data || []).map(h => ({
-                type: 'Feature',
-                properties: { 
-                    id: h.id, 
-                    title: h.theme_title, 
-                    severity: h.severity,
-                    isSelected: selectedHotspot?.id === h.id
-                },
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: createCircle(h.boundary_data.center, h.boundary_data.radius)
+            const features = (data || []).map(h => {
+                const coords = h.hotspot_reports
+                    ?.map(link => [link.reports.lng, link.reports.lat])
+                    .filter(c => c && c[0] && c[1]) || [];
+                
+                let geometry;
+                if (coords.length >= 3) {
+                    // ORGANIC: Convex Hull
+                    const hull = getConvexHull(coords);
+                    hull.push(hull[0]); // Close polygon
+                    geometry = { type: 'Polygon', coordinates: [hull] };
+                } else if (coords.length === 2) {
+                    // ORGANIC: Thick line capsule
+                    const center = [(coords[0][0] + coords[1][0]) / 2, (coords[0][1] + coords[1][1]) / 2];
+                    geometry = { type: 'Polygon', coordinates: createCircle(center, 40) }; // Fallback circle
+                } else if (coords.length === 1) {
+                    // ORGANIC: Simple circle
+                    geometry = { type: 'Polygon', coordinates: createCircle(coords[0], 30) };
+                } else {
+                    // Fallback to legacy boundary if no reports found (should not happen)
+                    geometry = { type: 'Polygon', coordinates: createCircle(h.boundary_data.center, h.boundary_data.radius) };
                 }
-            }));
+
+                return {
+                    type: 'Feature',
+                    properties: { 
+                        id: h.id, 
+                        title: h.theme_title, 
+                        severity: h.severity,
+                        isSelected: selectedHotspot?.id === h.id
+                    },
+                    geometry
+                };
+            });
 
             const source = map.current.getSource('hotspots');
             if (source) {
@@ -346,15 +381,15 @@ const Map = ({ onReportAdded, selectedReport, selectedHotspot, user }) => {
             if (map.current.getLayer('hotspot-fill')) {
                 map.current.setPaintProperty('hotspot-fill', 'fill-opacity', [
                     'case',
-                    ['==', ['get', 'id'], selectedHotspot?.id || ''], 0.4,
-                    0 // Hide unselected hotspots entirely
+                    ['==', ['get', 'id'], selectedHotspot?.id || ''], 0.45,
+                    0 // Filter: Hide unselected
                 ]);
             }
             if (map.current.getLayer('hotspot-border')) {
                 map.current.setPaintProperty('hotspot-border', 'line-opacity', [
                     'case',
                     ['==', ['get', 'id'], selectedHotspot?.id || ''], 1,
-                    0 // Hide unselected borders entirely
+                    0 // Filter: Hide unselected
                 ]);
             }
         };
