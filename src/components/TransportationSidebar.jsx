@@ -64,7 +64,7 @@ const TransportationSidebar = ({ user, isAdmin, onHotspotSelect }) => {
             <div className={`p-6 flex flex-col h-full overflow-hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-black border-b-2 border-purple-500 pb-1">
-                        Mobility Issues
+                        Mobility Issues {hotspots.length > 0 && `(${hotspots.length})`}
                     </h2>
                     {isAdmin && (
                         <button 
